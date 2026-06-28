@@ -2,7 +2,7 @@
 
 ## Model
 
-MoodAI uses Anthropic Claude through the `@anthropic-ai/sdk`. The model is configured with the `ANTHROPIC_MODEL` environment variable and defaults to `claude-sonnet-4-6` to match the project proposal.
+MoodAI uses Anthropic Claude through the Messages API. The model is configured with the `ANTHROPIC_MODEL` environment variable and defaults to `claude-sonnet-4-20250514`.
 
 ## Input Data
 

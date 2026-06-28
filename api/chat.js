@@ -1,6 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
-
-const DEFAULT_MODEL = "claude-sonnet-4-6";
+const DEFAULT_MODEL = "claude-sonnet-4-20250514";
+const ANTHROPIC_VERSION = "2023-06-01";
 
 function buildSystemPrompt(summary) {
   return `You are MoodAI, a warm and practical mental wellness companion.
@@ -31,6 +30,41 @@ function validatePayload(payload) {
   return null;
 }
 
+function generateLocalInsight(summary, question = "") {
+  const total = summary?.totalEntries || 0;
+  const mood = summary?.averages?.mood || 0;
+  const sleep = summary?.averages?.sleep || 0;
+  const energy = summary?.averages?.energy || 0;
+  const trend = summary?.trend?.label || "Needs more data";
+  const topEmotion = summary?.topEmotions?.[0]?.label;
+  const bestActivity = summary?.activityImpact?.[0]?.activity;
+
+  if (!total) {
+    return "I do not have enough mood data yet. Add a few daily entries first, then I can help you notice patterns in mood, sleep, energy, emotions, and activities.";
+  }
+
+  const lines = [
+    `Based on ${total} logged entr${total === 1 ? "y" : "ies"}, your average mood is ${mood.toFixed(1)} out of 5 and your recent trend looks ${trend.toLowerCase()}.`,
+    `Your average sleep is ${sleep.toFixed(1)} hours and average energy is ${energy.toFixed(1)} out of 5.`
+  ];
+
+  if (topEmotion) {
+    lines.push(`The emotion showing up most often is ${topEmotion}.`);
+  }
+
+  if (bestActivity) {
+    lines.push(`The activity most associated with better mood in your logs is ${bestActivity}. Treat that as a useful pattern, not proof of cause.`);
+  }
+
+  if (/warning|risk|bad|low|anxious|sad/i.test(question)) {
+    lines.push("If low mood, anxiety, or safety concerns feel intense or persistent, consider reaching out to a trusted person or a qualified mental health professional.");
+  } else {
+    lines.push("A practical next step is to keep logging for a few more days and compare mood against sleep and activities.");
+  }
+
+  return lines.join(" ");
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -49,32 +83,54 @@ export default async function handler(req, res) {
     });
   }
 
-  const anthropic = new Anthropic({ apiKey });
   const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
+  const messages = req.body.messages.map((message) => ({
+    role: message.role === "assistant" ? "assistant" : "user",
+    content: String(message.content || "").slice(0, 4000)
+  }));
+  const latestQuestion = [...messages].reverse().find((message) => message.role === "user")?.content || "";
 
   try {
-    const response = await anthropic.messages.create({
-      model,
-      max_tokens: 700,
-      temperature: 0.5,
-      system: buildSystemPrompt(req.body.summary),
-      messages: req.body.messages.map((message) => ({
-        role: message.role === "assistant" ? "assistant" : "user",
-        content: String(message.content || "").slice(0, 4000)
-      }))
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": ANTHROPIC_VERSION
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 700,
+        temperature: 0.5,
+        system: buildSystemPrompt(req.body.summary),
+        messages
+      })
     });
 
-    const text = response.content
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("MoodAI Anthropic API error", response.status, data);
+      return res.status(200).json({
+        reply: generateLocalInsight(req.body.summary, latestQuestion),
+        providerStatus: "fallback",
+        providerError: data?.error?.message || "Anthropic API request failed."
+      });
+    }
+
+    const text = data.content
       .filter((block) => block.type === "text")
       .map((block) => block.text)
       .join("\n")
       .trim();
 
-    return res.status(200).json({ reply: text });
+    return res.status(200).json({ reply: text, providerStatus: "anthropic" });
   } catch (error) {
     console.error("MoodAI chat error", error);
-    return res.status(500).json({
-      error: "The AI companion could not respond right now. Please try again."
+    return res.status(200).json({
+      reply: generateLocalInsight(req.body.summary, latestQuestion),
+      providerStatus: "fallback",
+      providerError: "The Claude service could not be reached."
     });
   }
 }

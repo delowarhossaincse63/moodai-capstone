@@ -58,7 +58,7 @@ cp .env.example .env.local
 
 ```text
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
-ANTHROPIC_MODEL=claude-sonnet-4-6
+ANTHROPIC_MODEL=claude-sonnet-4-20250514
 ```
 
 4. Start the frontend development server:
@@ -102,7 +102,7 @@ This approach provides personalization without storing raw mood data on a centra
 
 ```text
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
-ANTHROPIC_MODEL=claude-sonnet-4-6
+ANTHROPIC_MODEL=claude-sonnet-4-20250514
 ```
 
 4. Deploy with the default Vite settings. Vercel will use `npm run build` and output `dist`.
