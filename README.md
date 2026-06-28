@@ -1,123 +1,178 @@
 # MoodAI
 
-MoodAI is a privacy-first mental wellness web application that helps users turn daily mood logs into meaningful patterns. Users record mood, emotions, activities, sleep, energy, and journal notes in the browser. The dashboard summarizes trends locally, and the AI companion uses Claude through a serverless backend to provide empathetic, data-informed reflections.
+MoodAI is a privacy-first mood tracking and reflection app that helps users understand emotional patterns from daily check-ins. It combines local mood analytics with an AI companion that can summarize trends, explain possible correlations, and offer supportive next steps without storing raw journal data on a server.
 
-## Problem Statement
+Live app: https://moodai-capstone.vercel.app
 
-Many people track their mood but do not gain actionable insight from the data. Existing mood apps often collect entries passively, leaving users to manually interpret emotional patterns, sleep changes, activity effects, and early warning signs. MoodAI addresses this gap by combining structured mood logging, local analytics, and an AI companion that explains patterns in plain language.
+## Overview
+
+Most mood trackers collect information but leave users to interpret the data on their own. MoodAI closes that gap by turning daily logs into readable insights. Users can record mood, emotions, activities, sleep, energy, and optional journal notes. The dashboard analyzes those entries locally, while the AI companion receives a summarized version of the data and responds with warm, data-aware reflections.
+
+MoodAI is designed as a wellness reflection tool, not a clinical or diagnostic product.
 
 ## Features
 
-- Daily mood logging with mood score, emotions, activities, sleep, energy, and journal notes.
-- Browser localStorage persistence so raw entries stay on the user's device.
-- Analytics dashboard with mood trend, emotion frequency, activity impact, mood distribution, average sleep, average energy, and streak count.
-- Claude-powered AI companion that receives only aggregated mood statistics and recent notes.
-- Entry history with local delete support.
-- Responsive React interface ready for Vercel deployment.
+- Daily check-ins for mood, emotions, activities, sleep, energy, and journal notes
+- Local browser storage for raw mood entries
+- Analytics dashboard with averages, streaks, mood distribution, emotion frequency, and activity impact
+- AI companion powered by Anthropic Claude through a serverless API route
+- Local fallback insights if the AI provider is unavailable
+- Entry history with delete support
+- Responsive interface for desktop and mobile screens
 
 ## Tech Stack
 
-- Frontend: React 18 and Vite
-- Styling: Vanilla CSS
-- Backend: Vercel serverless function at `api/chat.js`
-- AI: Anthropic Claude via `@anthropic-ai/sdk`
-- Persistence: Browser localStorage
-- Deployment: Vercel
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 18, Vite |
+| Styling | Vanilla CSS |
+| Data Storage | Browser localStorage |
+| Backend | Vercel Serverless Function |
+| AI Provider | Anthropic Claude Messages API |
+| Deployment | Vercel |
+
+## Architecture
+
+```text
+Browser
+  React app
+    Log tab          -> saves entries to localStorage
+    Dashboard tab    -> computes local analytics
+    Companion tab    -> sends aggregated summary to /api/chat
+    History tab      -> reads and manages local entries
+
+Vercel
+  api/chat.js        -> calls Anthropic Claude securely
+```
+
+Raw mood entries remain in the user's browser. The AI endpoint receives only the computed summary and chat messages needed to answer the user's question.
 
 ## Project Structure
 
 ```text
 api/
-  chat.js                 Serverless AI companion endpoint
+  chat.js              Serverless AI companion endpoint
+
 src/
-  main.jsx                React application and views
-  moodAnalytics.js        Mood summary, trend, streak, and activity logic
-  moodStorage.js          localStorage persistence and demo data
-  styles.css              Responsive UI styling
+  main.jsx             React application views and UI flow
+  moodAnalytics.js     Mood statistics, trends, streaks, and activity impact
+  moodStorage.js       localStorage helpers and demo data
+  styles.css           Application styling
+
 docs/
-  PROJECT_PROPOSAL.md     1-2 page proposal
-  FINAL_REPORT.md         3-5 page final report
-  AI_METHODOLOGY.md       AI workflow and safety notes
+  AI_METHODOLOGY.md    AI workflow, safety rules, and limitations
+  FINAL_REPORT.md      Project report
+  PROJECT_PROPOSAL.md  Original project proposal
 ```
 
-## Setup Instructions
+## Getting Started
 
-1. Install dependencies:
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-2. Create a local environment file:
+Create an environment file:
 
 ```bash
 cp .env.example .env.local
 ```
 
-3. Add your Anthropic API key:
+Add your Anthropic API key:
 
 ```text
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ANTHROPIC_MODEL=claude-sonnet-4-20250514
 ```
 
-4. Start the frontend development server:
+Start the frontend development server:
 
 ```bash
 npm run dev
 ```
 
-5. Open the local URL printed by Vite, usually `http://localhost:5173`.
+Open the local URL printed by Vite, usually:
 
-For local testing of the `/api/chat` serverless route, run the app with Vercel's local runtime:
+```text
+http://localhost:5173
+```
+
+To test the serverless API locally, run with Vercel's local runtime:
 
 ```bash
 npx vercel dev
 ```
 
-The deployed Vercel application serves both the React frontend and the `api/chat.js` backend.
+## Available Scripts
 
-## Usage
-
-1. Open MoodAI and go to the Log tab.
-2. Save a daily check-in or load demo data.
-3. Review the Dashboard tab for trends, top emotions, and activity impact.
-4. Ask the Companion tab questions such as:
-   - What is my mood trend this week?
-   - What activities seem connected with better mood?
-   - Do you see any warning signs?
-5. Use the History tab to review or delete local entries.
-
-## AI Model and Methodology
-
-MoodAI uses context injection instead of custom model training. The browser computes a structured summary of the user's local entries, including mood average, sleep average, energy average, top emotions, top activities, activity impact, trend, and recent notes. That summary is sent to the serverless backend with the user's chat messages. The backend injects the summary into Claude's system prompt and returns the response to the frontend.
-
-This approach provides personalization without storing raw mood data on a central database. The app also uses safety guardrails that tell the model not to diagnose, prescribe treatment, or present itself as a clinician.
-
-## Deployment on Vercel
-
-1. Push this repository to GitHub.
-2. Import the repository into Vercel.
-3. Add these environment variables in Vercel Project Settings:
-
-```text
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-ANTHROPIC_MODEL=claude-sonnet-4-20250514
+```bash
+npm run dev
 ```
 
-4. Deploy with the default Vite settings. Vercel will use `npm run build` and output `dist`.
+Starts the Vite development server.
 
-## Screenshots to Include
+```bash
+npm run build
+```
 
-After deployment, capture these screens for submission:
+Creates a production build in `dist/`.
 
-- Log tab with a completed check-in form.
-- Dashboard tab showing mood trend and activity insights.
-- Companion tab showing one AI response.
-- History tab showing saved entries.
+```bash
+npm run preview
+```
 
-Store final screenshots in `docs/screenshots/` before submitting the GitHub repository.
+Serves the production build locally.
 
-## Safety Note
+```bash
+npm run lint
+```
 
-MoodAI is a wellness reflection tool, not a medical product. It should not be used for diagnosis, treatment, crisis response, or emergency support.
+Runs ESLint across the project.
+
+## Environment Variables
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | Yes | API key used by the serverless function to call Claude |
+| `ANTHROPIC_MODEL` | No | Claude model name. Defaults to `claude-sonnet-4-20250514` |
+
+Never expose the Anthropic API key in frontend code. It should only be stored in local environment files or Vercel environment variables.
+
+## Deployment
+
+MoodAI is ready for Vercel deployment.
+
+1. Push the repository to GitHub.
+2. Import the repository into Vercel.
+3. Add the environment variables listed above.
+4. Deploy using the default Vite settings:
+
+```text
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+```
+
+After changing environment variables, redeploy the project so the serverless function receives the updated values.
+
+## AI Workflow
+
+MoodAI uses context injection instead of custom model training. The browser computes a structured summary from local mood entries, including averages, recent trend, top emotions, top activities, activity impact, and recent notes. That summary is sent to `/api/chat`, where it is inserted into a system prompt for Claude.
+
+The AI companion is instructed to be supportive, specific to the user's data, and careful about uncertainty. It does not diagnose, prescribe treatment, or present itself as a clinician.
+
+## Privacy
+
+- Raw mood entries are stored in browser localStorage.
+- No database is used.
+- The AI endpoint receives only summarized mood data and chat messages.
+- Users can delete local entries from the History tab.
+
+## Safety
+
+MoodAI is not a medical device, therapist, crisis line, or diagnostic system. It is intended for self-reflection and personal wellness tracking. Users experiencing serious distress, self-harm thoughts, or immediate safety concerns should contact local emergency services, a trusted person, or a qualified mental health professional.
+
+## License
+
+This project is provided for educational and portfolio use.
